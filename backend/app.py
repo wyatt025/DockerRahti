@@ -16,13 +16,27 @@ def health():
 @app.get('/api')
 def index():
     conn = mysql.connector.connect(
-       host=DB_HOST,user=DB_USER,password=DB_PASSWORD,database=DB_NAME,
+       host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME,
     )
     cur = conn.cursor()
-    cur.execute("SELECT 'Hello from MySQL via Flask!'")
+    
+    # 1. WRITE OPERATION: Insert a new timestamp record into the visits table
+    cur.execute("INSERT INTO visits (visit_time) VALUES (NOW())")
+    conn.commit() # Saves the write to the database
+    
+    # 2. READ OPERATION: Count entries and grab the database server time via SELECT NOW()
+    cur.execute("SELECT COUNT(*), NOW() FROM visits")
     row = cur.fetchone()
-    cur.close(); conn.close()
-    return jsonify(message=row[0])
+    
+    cur.close()
+    conn.close()
+    
+    # Return the real database values as a JSON response
+    return jsonify(
+        message="Hello from MySQL via Flask on Rahti!",
+        total_visits=row[0],
+        database_server_time=str(row[1])
+    )
 
 if __name__ == '__main__':
  # Dev-only fallback
