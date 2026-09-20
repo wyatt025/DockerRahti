@@ -184,7 +184,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: gh05t025/lemp-frontend:latest
+          image: gh05t025/lemp-frontend:1.0.0
           ports:
             - containerPort: 8080
 ---
