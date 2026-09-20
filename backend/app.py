@@ -20,7 +20,7 @@ def index():
     )
     cur = conn.cursor()
     
-    # 1. WRITE OPERATION: Insert a new timestamp record into the visits table
+    # 1. WRITE OPERATION: Insert a new timestamp record into the visits table   
     cur.execute("INSERT INTO visits (visit_time) VALUES (NOW())")
     conn.commit() # Saves the write to the database
     

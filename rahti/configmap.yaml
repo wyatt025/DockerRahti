@@ -6,3 +6,20 @@ data:
   DB_HOST: "db"
   DB_USER: "appuser"
   DB_NAME: "appdb"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init-script
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS appdb;
+    CREATE USER IF NOT EXISTS 'appuser'@'%' IDENTIFIED BY 'changeme';
+    GRANT ALL PRIVILEGES ON appdb.* TO 'appuser'@'%';
+    FLUSH PRIVILEGES;
+
+    USE appdb;
+    CREATE TABLE IF NOT EXISTS visits (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        visit_time DATETIME
+    );
