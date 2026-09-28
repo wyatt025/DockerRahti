@@ -1,0 +1,258 @@
+# Rebuild and push the backend with Requests installed; its Deployment references this tag.
+# docker build -f backend/Dockerfile -t gh05t025/lemp-backend:1.0.2 .
+# docker push gh05t025/lemp-backend:1.0.2
+# docker build -f frontend/Dockerfile -t gh05t025/lemp-frontend:1.0.4 .
+# docker push gh05t025/lemp-frontend:1.0.4
+# Create this Secret in Rahti; it stores provider credentials and Flask's signing key.
+# oc create secret generic github-oauth --from-literal=GITHUB_CLIENT_ID='YOUR_CLIENT_ID' --from-literal=GITHUB_CLIENT_SECRET='YOUR_CLIENT_SECRET' --from-literal=FLASK_SECRET_KEY='YOUR_LONG_RANDOM_SESSION_KEY'
+# mysql-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+type: Opaque
+# Example values only; replace with strong credentials before applying this template.
+stringData:
+  DB_PASSWORD: "changeme"
+  MYSQL_ROOT_PASSWORD: "changeme"
+---
+# configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  DB_HOST: "db"
+  DB_USER: "appuser"
+  DB_NAME: "appdb"
+  # Must exactly match the callback URL registered in the GitHub OAuth App.
+  OAUTH_REDIRECT_URI: "https://frontend-route-dockertorahti.2.rahtiapp.fi/auth/callback"
+  # Send the browser session cookie only on HTTPS requests.
+  SESSION_COOKIE_SECURE: "true"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init-script
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS appdb;
+    -- Example password only; Rahti supplies the live app password through its Secret.
+    CREATE USER IF NOT EXISTS 'appuser'@'%' IDENTIFIED BY 'changeme';
+    GRANT ALL PRIVILEGES ON appdb.* TO 'appuser'@'%';
+    FLUSH PRIVILEGES;
+
+    USE appdb;
+    CREATE TABLE IF NOT EXISTS visits (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        visit_time DATETIME
+    );
+---
+# mysql-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# mysql-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_NAME
+            - name: MYSQL_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: DB_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+            - name: init-script-volume
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mysql-data
+        - name: init-script-volume
+          configMap:
+            name: db-init-script
+---
+# mysql-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  selector:
+    app: db
+  ports:
+    - port: 3306
+      targetPort: 3306
+---
+# backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: gh05t025/lemp-backend:1.0.2
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_HOST
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_USER
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_NAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: DB_PASSWORD
+            - name: OAUTH_REDIRECT_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: OAUTH_REDIRECT_URI
+            - name: SESSION_COOKIE_SECURE
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: SESSION_COOKIE_SECURE
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: github-oauth
+                  key: GITHUB_CLIENT_ID
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: github-oauth
+                  key: GITHUB_CLIENT_SECRET
+            - name: FLASK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: github-oauth
+                  key: FLASK_SECRET_KEY
+---
+# backend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  ports:
+    - port: 8000
+      targetPort: 8000
+  selector:
+    app: backend
+---
+# frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: gh05t025/lemp-frontend:1.0.4
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+---
+# frontend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+# frontend-route.yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: frontend-route
+spec:
+  to:
+    kind: Service
+    name: frontend
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

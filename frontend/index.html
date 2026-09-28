@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="index.css">
+        <meta charset="utf-8" />
+        <title>Containerized LEMP Example</title>
+    </head>
+    <body>
+        <h1>Frontend (Nginx)</h1>
+
+        <!-- These controls reflect the Flask session; OAuth credentials stay server-side. -->
+        <p id="auth-status">Checking sign-in...</p>
+        <a id="login-link" href="/auth/login" hidden>Sign in with GitHub</a>
+        <button id="logout-button" type="button" hidden>Sign out</button>
+
+        <main id="protected-content" hidden>
+        <div id="msg">Loading...</div>
+
+        <div>Total visitors: <span id="total"></span></div>
+
+        <div>Database server time: <span id="server-time"></span></div>
+
+        <h2><u>App description</u></h2>
+            <p>This is a simple LEMP stack example, where the frontend is served by Nginx, the backend is powered by PHP-FPM, and the database is MySQL. 
+                The application demonstrates basic CRUD operations and showcases how to containerize a web application using Docker and deploy it on Kubernetes(Rahti).
+            </p>
+        <h2><u>Answer 1:</u></h2>
+            <p>
+            </p>
+        <h2><u>Answer 2:</u></h2>
+            <p>
+            </p>
+
+        <h2><u>Answer 3:</u></h2>
+            <p>
+            </p>
+
+        <h2><u>Answer 4:</u></h2>
+            <p>
+            </p>
+
+        </main>
+
+        <script>
+            // Check the Flask session first, then fetch database data only for signed-in users.
+            const authStatus = document.getElementById('auth-status');
+            const loginLink = document.getElementById('login-link');
+            const logoutButton = document.getElementById('logout-button');
+            const protectedContent = document.getElementById('protected-content');
+
+            fetch('/api/me')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.user) {
+                        authStatus.textContent = 'Sign in to view the application data.';
+                        loginLink.hidden = false;
+                        document.getElementById('msg').textContent = 'Sign in to load visitor data.';
+                        return;
+                    }
+
+                    authStatus.textContent = `Signed in as ${data.user.login}`;
+                    logoutButton.hidden = false;
+                    protectedContent.hidden = false;
+                    return fetch('/api')
+                        .then(response => response.json())
+                        .then(apiData => {
+                            document.getElementById('msg').textContent = apiData.message;
+                            document.getElementById('total').textContent = apiData.total_visits;
+                            document.getElementById('server-time').textContent = apiData.database_server_time;
+                        });
+                })
+                .catch(error => {
+                    authStatus.textContent = 'Unable to check sign-in status.';
+                    document.getElementById('msg').textContent = 'API error: ' + error;
+                });
+
+            // Clear the server-side session and reload to show the login link again.
+            logoutButton.addEventListener('click', () => {
+                fetch('/auth/logout', { method: 'POST' }).then(() => window.location.reload());
+            });
+        </script>
+    </body>
+</html>

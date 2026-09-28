@@ -1,0 +1,6 @@
+flask==3.0.3
+# OAuth client used by Flask to integrate with GitHub.
+Authlib==1.3.2
+requests==2.32.4
+gunicorn==23.0.0
+mysql-connector-python==9.0.0
