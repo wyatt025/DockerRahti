@@ -20,22 +20,18 @@
 
         <div>Database server time: <span id="server-time"></span></div>
 
-        <h2><u>App description</u></h2>
-            <p>This is a simple LEMP stack example, where the frontend is served by Nginx, the backend is powered by PHP-FPM, and the database is MySQL. 
-                The application demonstrates basic CRUD operations and showcases how to containerize a web application using Docker and deploy it on Kubernetes(Rahti).
-            </p>
+        <h2><u>Answers to Questions 1-4</u></h2>
+
         <h2><u>Answer 1:</u></h2>
             <p>
                 SAML is an authentication protocol (proving who a user is), while OAuth is an authorization framework (granting what a user or application is allowed to do).
                 SAML acts like a passport that verifies your identity to get you into a building, whereas OAuth acts like a keycard or valet key that gives specific access to certain rooms or functions without revealing your identity.
             </p>
-            <br>
             <p>
                 A company will typically choose SAML when building or managing enterprise employee environments like using a Centralized Corporate SSO, which lets employees log into a central dashboard once and automatically gain access to all their enterprise SaaS applications.
                 High-Security Enterprise Compliance is also a reason why SAML is heavily favored or used by IT security teams because it relies on strict XML signatures and certificates, providing robust governance over user identity.
                 there may also be legacy systems that require SAML for compatibility.
             </p>
-            <br>
             <p>
                 A company would choose OAuth (often combined with OIDC / OpenID Connect for identity) when building modern web apps, mobile apps, or API-driven services.
                 Mobile or single page appplications often use OAuth as it is much lighter and easier for mobile devices to parse.
@@ -89,9 +85,9 @@
                 Most changes happened in the backend code. 
             </p>
             <div class="imageDiv">
-                <span>Set-up OAuth app in GitHub:
-                    <img src="screenshots/gitOAuth.png" alt="OAuth Setup Screenshot" >
-                </span>
+                <div>Set-up OAuth app in GitHub:
+                    <img src="screenshots/gitOAuth.png" alt="OAuth Setup Screenshot" style="width: 83vw; height: 44vw;">
+                </div>
                 <span>Enabled TLS for the frontend URL and applied it to the frontend service.
                     Needed to enable TLS for secure communication and prevent possible errors with set-up.
                 </span>
@@ -106,7 +102,7 @@
                 </span>
             </div>
 
-            <h3>Reflection</h3>
+            <h2>Reflection</h2>
             <p>
                 This implementation uses GitHub OAuth for sign-in, while SAML is more common for enterprise SSO. 
                 OAuth provides delegated authorization; the backend retrieves the GitHub profile and uses it to establish the app session. 
