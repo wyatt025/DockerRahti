@@ -1,1 +1,1 @@
-updated link: http://frontend-route-dockertorahti.2.rahtiapp.fi/
+updated link: https://frontend-route-dockertorahti.2.rahtiapp.fi/
