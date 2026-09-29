@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: gh05t025/lemp-frontend:1.0.5
+          image: gh05t025/lemp-frontend:1.0.6
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
