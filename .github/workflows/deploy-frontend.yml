@@ -1,1 +1,51 @@
+name: Deploy Frontend
 
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/dockerrahti-frontend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+
+      - uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          oc: "4"
+
+      - name: Deploy to Rahti
+        env:
+          RAHTI_SERVER: ${{ secrets.RAHTI_SERVER }}
+          RAHTI_TOKEN: ${{ secrets.RAHTI_TOKEN }}
+          RAHTI_PROJECT: ${{ secrets.RAHTI_PROJECT }}
+        run: |
+          oc login --token="$RAHTI_TOKEN" --server="$RAHTI_SERVER"
+          oc project "$RAHTI_PROJECT"
+          oc set image deployment/frontend frontend=${{ env.IMAGE }}:${{ github.sha }}
+          oc rollout status deployment/frontend --timeout=180s
