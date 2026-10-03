@@ -4,6 +4,8 @@ from authlib.integrations.flask_client import OAuth
 from flask import Flask, jsonify, redirect, session
 import mysql.connector
 
+#This is a test comment for testing git workflow
+
 app = Flask(__name__)
 # Flask signs the login session with this key; kept in a Kubernetes Secret.
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
